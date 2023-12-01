@@ -15,9 +15,9 @@
 
 // -------- Custom Defines ------- //
 
-#define Kp 1.00  	// tweak
-#define Ki 0.0  	// tweak
-#define Kd 0.0  	// tweak
+#define Kp 1.05  	// tweak
+#define Ki 0.0001  	// tweak
+#define Kd 0.256  	// tweak
 
 // ----- Function Prototypes ----- //
 double compute_pid(double reference, double current_position);

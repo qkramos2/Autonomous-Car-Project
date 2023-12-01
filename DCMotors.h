@@ -18,10 +18,10 @@
 
 #define DCClock  	(48000000)
 #define DCFrequency (10000)
-#define MIN_SPEED   (25.0)  // tweak
+#define MIN_SPEED   (25.0)  // tweak, try 20.0
 #define MAX_SPEED   (100.0)
 #define STATIONARY  (0.0)
-#define DIFF_COEF   (0.25)  // tweak
+#define DIFF_COEF   (0.28)  // tweak
 
 // ----- Function Prototypes ----- //
 

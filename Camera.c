@@ -95,7 +95,7 @@ double track_position(uint16_t* smoothData){
 //////////////////////////////////////////////////////////////
 
 int carpetDetection(uint16_t* smoothData, int referenceADC) {
-    int carpetThreshold = referenceADC - 7000;
+    int carpetThreshold = referenceADC - 10000;
     int counter = 0;
 
     for (int i = 0; i < CAM_RESOLUTION; i+=2) {

@@ -64,12 +64,12 @@ Milestone #3:
 #define REFERENCE_TRACK_POS (64)
 
 // Turning Defines:
-#define TURN_THRESHOLD 	 	(5.000)	// tweak
-#define MAX_TURN_THRESH  	(25.00)	// tweak
-#define SERVO_STEP_SIZE	 	(0.020)	// tweak
+#define TURN_THRESHOLD 	 	(6.000)	// tweak, try 5.00-4.00
+#define MAX_TURN_THRESH  	(19.00)	// tweak
+#define SERVO_STEP_SIZE	 	(0.020)	// tweak, try 0.017-0.010
 
 // Camera Defines:
-#define CARPET_THRESHOLD 	(5)
+#define CARPET_THRESHOLD 	(500)
 
 //////////////////////////////////////////////////////////////
 // --- EXTERNAL VARIABLES --- 
@@ -99,6 +99,21 @@ uint16_t smoothData[128];
 
 //////////////////////////////////////////////////////////////
 //
+// miscellaneous functions:
+//
+//////////////////////////////////////////////////////////////
+
+// Millisecond delay:
+void delay_ms(unsigned int milliseconds){ for (unsigned int i = 0; i < milliseconds * 48000; i++); }
+
+// Button delay:
+static void btnDelay(int delay) {int tmp; for (tmp = 0; tmp <= delay; tmp++){ continue; } }
+
+// Flash Red LED:
+void redFlash(void){ LED2_On(RED); delay_ms(40); LED2_Off(RED); delay_ms(5); }
+
+//////////////////////////////////////////////////////////////
+//
 // Initalize the car by enabling all motors & sensors and
 //   enabling interrupts
 //
@@ -115,9 +130,10 @@ void initCar(void){
 	#ifndef RACE_MODE
 		// Initalize Accessories:
 		uart0_init(); OLED_Init();
-		initLED1(); initLED2();
-		initSwitch1(); initSwitch2();
 	#endif
+
+	// Initialize Switches & LED to indicate speed:
+	initLED2(); initSwitch1(); initSwitch2();
 
 	// Enable Interrupts and begin:
 	EnableInterrupts();
@@ -126,10 +142,39 @@ void initCar(void){
 		// Call the start menu:
 		startMenu();
 	#else
-		// Set speed, Drive & Steermode:
-		setSpeed  = 40.0; // 35.0 speed
-		driveMode = 0;    // Drive Mode
-		steerMode = 1;    // PID Mode
+		// Select speed:
+		int counterOne = 1; int lastCounter = 1;
+		while(1) {
+        // Toggle through speeds if switch 1 pressed:
+        if (Switch1_Pressed()) { btnDelay(1500000); (counterOne == 6) ? counterOne = 1 : counterOne++; }
+		if (counterOne == lastCounter) {
+            // Go thru different speeds:
+            switch (counterOne) {
+                case 1:
+					LED2_Off(WHITE); LED2_On(RED); setSpeed = 30.0; break; 		// works
+                
+                case 2:
+                    LED2_Off(RED); LED2_On(YELLOW); setSpeed = 32.0; break;		// works
+                
+                case 3:
+                    LED2_Off(YELLOW); LED2_On(GREEN); setSpeed = 34.0; break;	// works
+                
+                case 4:
+                    LED2_Off(GREEN); LED2_On(MAGENTA); setSpeed = 36.0; break;	// not turning hard enough
+
+				case 5:
+                    LED2_Off(MAGENTA); LED2_On(CYAN); setSpeed = 38.0; break;	// not turning hard enough
+				
+				case 6:
+                    LED2_Off(CYAN); LED2_On(WHITE); setSpeed = 40.0;  break;	// not turning hard enough
+            }
+			// Change the temp variable
+            (lastCounter == 6) ? lastCounter = 1 : lastCounter++;
+        }
+		
+		if (Switch2_Pressed()) {LED2_Off(WHITE); return;}
+		}
+
 	#endif
 }
 
@@ -200,18 +245,18 @@ void steer(double error){
 
 void steer(double error){
 	// If above turn threshold, turn the car:
-	if (fabs(error) > TURN_THRESHOLD) {
+	if (fabs(error) >= TURN_THRESHOLD) {
 		// Take a hard turn:
 		if (fabs(error) >= MAX_TURN_THRESH) {
 			// Turn servo and adjust motor speed:
 			toggleServo((error > 0) ? 2.0 : 1.0);
-			differentialTurn(MAX_TURN_THRESH, MAX_TURN_THRESH, setSpeed);
+			differentialTurn(MAX_TURN_THRESH, MAX_TURN_THRESH, setSpeed-4);
 		}
 		// Ease into turn:
 		else {
 			// Turn servo and adjust motor speed:
 			toggleServo(1.5 + (SERVO_STEP_SIZE * error));
-			differentialTurn(error, MAX_TURN_THRESH, setSpeed);
+			differentialTurn(error, MAX_TURN_THRESH, setSpeed-4);
 		}
 	}
 	// if below threshold keep going straight:
@@ -226,28 +271,6 @@ void steer(double error){
 
 //////////////////////////////////////////////////////////////
 //
-// miscellaneous functions:
-//
-//////////////////////////////////////////////////////////////
-
-// Millisecond delay:
-void delay_ms(unsigned int milliseconds){ for (unsigned int i = 0; i < milliseconds * 48000; i++); }
-
-// Flash Red LED:
-void redFlash(void){ LED2_On(RED); delay_ms(40); LED2_Off(RED); delay_ms(5); }
-
-// Wait 3 seconds and countdown each second on OLED:
-void countDown(void){
-	clear_OLED();
-	OLED_Print(2,4,"3"); redFlash();
-	OLED_Print(2,8,"2"); redFlash();
-	OLED_Print(2,12,"1"); redFlash();
-	OLED_Print(4,6,"RACE!"); LED2_On(color);
-	clear_OLED();
-}
-
-//////////////////////////////////////////////////////////////
-//
 // Main Car Loop
 //
 //////////////////////////////////////////////////////////////
@@ -255,8 +278,8 @@ void countDown(void){
 #ifndef RACE_MODE
 
 int main(void){
-	// Initalize Car & Count down after:
-	initCar(); countDown();
+	// Initalize Car:
+	initCar();
 
 	// Infinitely loop:
 	while(1) {
@@ -325,7 +348,7 @@ int main(void){
 			else if (carpetDetection(smoothData, REFERENCE_ADC) == 1) { carpetCounter++; }
 			
 			// steer the motor regularly and reset carpet counter:
-			else { steer(error); carpetCounter = 0; }
+			else { carpetCounter = 0; steer(error); }
 		}
 	}
 }
