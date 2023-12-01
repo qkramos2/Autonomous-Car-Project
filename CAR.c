@@ -93,6 +93,7 @@ extern int steerMode;		// Default: Bang-Bang
 
 char str[100] = "";
 double error = 0.0;
+double decrementer = 0;
 int carpetCounter = 0;
 uint16_t color = GREEN;
 uint16_t smoothData[128];
@@ -151,22 +152,22 @@ void initCar(void){
             // Go thru different speeds:
             switch (counterOne) {
                 case 1:
-					LED2_Off(WHITE); LED2_On(RED); setSpeed = 30.0; break; 		// works
+					LED2_Off(WHITE); LED2_On(RED); setSpeed = 30.0; decrementer = 4.0; break; 		// works
                 
                 case 2:
-                    LED2_Off(RED); LED2_On(YELLOW); setSpeed = 32.0; break;		// works
+                    LED2_Off(RED); LED2_On(YELLOW); setSpeed = 32.0; decrementer = 4.0; break;		// works
                 
                 case 3:
-                    LED2_Off(YELLOW); LED2_On(GREEN); setSpeed = 34.0; break;	// works
+                    LED2_Off(YELLOW); LED2_On(GREEN); setSpeed = 34.0; decrementer = 4.0; break;	// works
                 
                 case 4:
-                    LED2_Off(GREEN); LED2_On(MAGENTA); setSpeed = 36.0; break;	// not turning hard enough
+                    LED2_Off(GREEN); LED2_On(MAGENTA); setSpeed = 36.0; decrementer = 6.0; break;	// works
 
 				case 5:
-                    LED2_Off(MAGENTA); LED2_On(CYAN); setSpeed = 38.0; break;	// not turning hard enough
+                    LED2_Off(MAGENTA); LED2_On(CYAN); setSpeed = 38.0; decrementer = 6.0; break;	// not turning hard enough, try -8
 				
 				case 6:
-                    LED2_Off(CYAN); LED2_On(WHITE); setSpeed = 40.0;  break;	// not turning hard enough
+                    LED2_Off(CYAN); LED2_On(WHITE); setSpeed = 40.0;  decrementer = 6.0; break;		// not turning hard enough,  try -10
             }
 			// Change the temp variable
             (lastCounter == 6) ? lastCounter = 1 : lastCounter++;
@@ -250,13 +251,13 @@ void steer(double error){
 		if (fabs(error) >= MAX_TURN_THRESH) {
 			// Turn servo and adjust motor speed:
 			toggleServo((error > 0) ? 2.0 : 1.0);
-			differentialTurn(MAX_TURN_THRESH, MAX_TURN_THRESH, setSpeed-4);
+			differentialTurn(MAX_TURN_THRESH, MAX_TURN_THRESH, (setSpeed-decrementer));
 		}
 		// Ease into turn:
 		else {
 			// Turn servo and adjust motor speed:
 			toggleServo(1.5 + (SERVO_STEP_SIZE * error));
-			differentialTurn(error, MAX_TURN_THRESH, setSpeed-4);
+			differentialTurn(error, MAX_TURN_THRESH, (setSpeed-decrementer));
 		}
 	}
 	// if below threshold keep going straight:
